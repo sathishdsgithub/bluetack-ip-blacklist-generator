@@ -8,17 +8,20 @@ grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' blacklist > blacklist-
 grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}[-][0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' blacklist > blacklist-ip-range
 sed -i -E "s/[-][0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\./\//" blacklist-ip-range
 
-while read IPADDR
-do
-    sudo ufw deny from $IPADDR to any 
-done < blacklist-ip-range
+sort blacklist-ip | uniq -u > blacklist-ip-sorted
+sort blacklist-ip-range | uniq -u > blacklist-ip-range-sorted
 
 while read IPADDR
 do
-    sudo ufw deny from $IPADDR to any 
-done < blacklist-ip
+    route add $IPADDR gw 127.0.0.1 lo &
+done < blacklist-ip-range-sorted
 
+while read IPADDR
+do
+    route add $IPADDR gw 127.0.0.1 lo &
+done < blacklist-ip-sorted
 
-sudo ufw disable
-sudo ufw enable
-sudo ufw status
+rm -f blacklist-ip
+rm -f blacklist-ip-sorted
+rm -f blacklist-ip-range
+rm -f blacklist-ip-range-sorted
